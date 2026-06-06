@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-06
+
+### Fixed
+- Release workflow now finds the correct checksum assets (`stedi-<target>.sha256`)
+  and generates the Homebrew formula via a tested `scripts/gen-formula.sh`, so
+  the tagged release pipeline (binaries + formula auto-update) completes green.
+
 ## [0.1.0] - 2026-06-05
 
 ### Added
@@ -20,5 +27,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   at `~/.config/stedi/config.toml`.
 - Cross-platform release binaries and a Homebrew formula.
 
-[Unreleased]: https://github.com/useTaiga/stedi-cli/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/useTaiga/stedi-cli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/useTaiga/stedi-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/useTaiga/stedi-cli/releases/tag/v0.1.0

@@ -193,4 +193,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see
 
 ## License
 
-[MIT](LICENSE) © Taiga
+[MIT](LICENSE) © Bayes AI, Inc.

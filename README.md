@@ -27,12 +27,8 @@ Built for LLM agents and scripts:
 
 ```bash
 brew tap useTaiga/stedi https://github.com/useTaiga/stedi-cli
-brew install stedi
+brew install useTaiga/stedi/stedi
 ```
-
-> While the repository is private, `brew` needs access to the release assets.
-> Authenticate once with a GitHub token that can read the repo:
-> `export HOMEBREW_GITHUB_API_TOKEN=$(gh auth token)`.
 
 ### Prebuilt binaries
 

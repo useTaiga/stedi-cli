@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-06-05
+
+### Added
+- Initial release.
+- Spec-driven CLI over the bundled Stedi OpenAPI specs (`claims`, `core`,
+  `enrollment`, `event-destinations`, `healthcare`, `manager`, `payers`),
+  embedded at build time.
+- Commands: `apis`, `ops`, `describe`, `schema`, `call`, `configure`.
+- `call` with auto-routed `-p` parameters, `--body`/`@file`, `--dry-run`,
+  `--verbose`, and `--timeout`.
+- API-key resolution via `--api-key`, `$STEDI_API_KEY`, or a `0600` config file
+  at `~/.config/stedi/config.toml`.
+- Cross-platform release binaries and a Homebrew formula.
+
+[Unreleased]: https://github.com/useTaiga/stedi-cli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/useTaiga/stedi-cli/releases/tag/v0.1.0

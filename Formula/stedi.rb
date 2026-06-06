@@ -9,22 +9,22 @@ class Stedi < Formula
   on_macos do
     on_arm do
       url "https://github.com/useTaiga/stedi-cli/releases/download/v0.1.1/stedi-aarch64-apple-darwin.tar.gz"
-      sha256 "efed564e6b1be3d0a83a62603d9e48ecbf148ef0e01b287cc088065f0febc3da"
+      sha256 "b6c0aa5d714e3ce560589eb0e3d545301a03c611d6aa9436389cd25d76ab847b"
     end
     on_intel do
       url "https://github.com/useTaiga/stedi-cli/releases/download/v0.1.1/stedi-x86_64-apple-darwin.tar.gz"
-      sha256 "280c13b01782027a8eeeb09af2a81ce9131e44c2e0106a7d1a01840bacd5b531"
+      sha256 "25463997fe9b4e7fbe4cef2bad5e5f2a85e3afae83af891eebacd32ad5fff3d3"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/useTaiga/stedi-cli/releases/download/v0.1.1/stedi-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "5cbc155d892efef7f9d4cdd39d72f446f482c160edb381f3bc9d6f3114bf3cd5"
+      sha256 "d5662ff77a0ff6ef1f1773aade747c717ab76ab5d74a1aeeec7b122b98a2e66c"
     end
     on_intel do
       url "https://github.com/useTaiga/stedi-cli/releases/download/v0.1.1/stedi-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "6703c76937ee50ff82d25104a8d331ff6ac5608fe6ef73d4f65c04c1d52b17c6"
+      sha256 "d1b88e8dec91ca64c5f23bc75df5ba85e9b454ad07b9d4f0192f3e634b063930"
     end
   end
 

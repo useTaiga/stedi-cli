@@ -140,6 +140,14 @@ Refresh them from the upstream Stedi OpenAPI repository with
 [`scripts/sync-specs.sh`](scripts/sync-specs.sh), then rebuild — there is no
 codegen step.
 
+## Using with AI agents
+
+This repo ships a [Claude Code skill](.claude/skills/stedi-cli/SKILL.md) that
+teaches an agent how to drive `stedi` — discovering operations, reading their
+schemas, and building/previewing/executing requests safely. It activates
+automatically in Claude Code when you work in this repo, or copy
+`.claude/skills/stedi-cli` into `~/.claude/skills/` to use it everywhere.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see

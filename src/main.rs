@@ -231,7 +231,7 @@ fn find_operation(
     let mut matches: Vec<(String, String, String, Value)> = iter_operations(specs)
         .into_iter()
         .filter(|(api, _, _, op)| {
-            api_filter.as_ref().map_or(true, |f| f == api)
+            api_filter.as_ref().is_none_or(|f| f == api)
                 && op.get("operationId").and_then(Value::as_str) == Some(op_ref.as_str())
         })
         .collect();

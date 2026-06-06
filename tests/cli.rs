@@ -179,3 +179,93 @@ fn configure_writes_and_resolves_key() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn version_includes_build_metadata() {
+    let out = stedi().arg("--version").output().unwrap();
+    let s = String::from_utf8(out.stdout).unwrap();
+    // e.g. "stedi 0.2.0 (abc1234, 2026-06-06)" — has a parenthesized build stamp.
+    assert!(
+        s.contains('(') && s.contains(')'),
+        "version lacks build metadata: {s}"
+    );
+}
+
+#[test]
+fn jq_filters_output() {
+    let out = stedi().args(["apis", "--jq", ".[].api"]).output().unwrap();
+    assert!(out.status.success());
+    let s = String::from_utf8(out.stdout).unwrap();
+    assert!(s.contains("\"healthcare\""));
+    assert!(s.contains("\"payers\""));
+    // jq projected to scalars, so the full object keys shouldn't appear.
+    assert!(!s.contains("\"operations\""));
+}
+
+#[test]
+fn table_output_renders_columns() {
+    let out = stedi().args(["apis", "-o", "table"]).output().unwrap();
+    assert!(out.status.success());
+    let s = String::from_utf8(out.stdout).unwrap();
+    // comfy-table draws box-drawing borders and includes our column headers.
+    assert!(s.contains("api") && s.contains("operations"));
+    assert!(s.contains('┌') || s.contains('|'));
+}
+
+#[test]
+fn compact_output_is_single_line() {
+    let out = stedi()
+        .args(["apis", "-o", "compact", "--jq", ".[0].api"])
+        .output()
+        .unwrap();
+    let s = String::from_utf8(out.stdout).unwrap();
+    assert_eq!(s.trim(), "\"claims\"");
+}
+
+#[test]
+fn completions_generate() {
+    for shell in ["bash", "zsh", "fish", "powershell"] {
+        stedi().args(["completions", shell]).assert().success();
+    }
+}
+
+#[test]
+fn man_page_generates() {
+    let out = stedi().arg("man").output().unwrap();
+    assert!(out.status.success());
+    let s = String::from_utf8(out.stdout).unwrap();
+    assert!(s.contains(".TH stedi"));
+}
+
+#[test]
+fn paginate_rejects_non_get() {
+    stedi()
+        .args(["call", "EligibilityCheck", "--paginate", "--body", "{}"])
+        .env("STEDI_API_KEY", "x")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("--paginate only applies to GET"));
+}
+
+#[test]
+fn raw_get_requires_api_for_relative_path() {
+    stedi()
+        .args(["get", "/payers"])
+        .env("STEDI_API_KEY", "x")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("--api"));
+}
+
+#[test]
+fn body_from_stdin() {
+    let out = stedi()
+        .args(["call", "EligibilityCheck", "--body", "@-", "--dry-run"])
+        .env("STEDI_API_KEY", "x")
+        .write_stdin(r#"{"fromStdin":true}"#)
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["request"]["body"]["fromStdin"], true);
+}

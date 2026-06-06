@@ -111,9 +111,19 @@ mandatory for any state-changing call (POST/PUT/DELETE: submissions, enrollment
 creation/updates, deletions).
 
 Other flags: `--query`/`--path`/`--header KEY=VALUE` force a value into a
-specific location; `--api-key` overrides the resolved key for one call;
-`--verbose` echoes the request alongside the response; `--timeout SECONDS`
-(default 60).
+specific location; `--body @-` reads the body from stdin; `--api-key` overrides
+the resolved key; `--verbose` echoes the request alongside the response;
+`--timeout SECONDS` (default 60). Transient failures (429/5xx) are retried
+automatically with backoff — add `--debug` to watch the full HTTP exchange
+(auth redacted) when something goes wrong.
+
+### Global flags worth knowing
+
+- `--jq 'EXPR'` filters output through a built-in jq (no `jq` install needed).
+  Prefer this over piping to `jq` — it's self-contained: `... --jq '.body.x'`.
+- `-o compact` emits one-line JSON (nice for NDJSON-style processing); `-o table`
+  is a human view. **Leave output as the default JSON when you'll parse it.**
+- `--debug` dumps request+response to stderr for troubleshooting.
 
 ## 4. Read the response
 
@@ -126,20 +136,50 @@ specific location; `--api-key` overrides the resolved key for one call;
   (e.g. `access_denied`, validation messages). A `403`/`access_denied` almost
   always means a bad or missing API key.
 
-## 5. Pagination
+## 5. Pagination — use `--paginate`
 
 List endpoints (e.g. `ListEnrollments`, `ListExecutions`, `ListPayerRecords`)
-page with a token. Pass `-p pageSize=N` and read `nextPageToken` from the
-response `body`; feed it back as `-p pageToken=<token>` until it's absent:
+page with `nextPageToken`. When a user asks for "all" of something, **don't loop
+by hand** — pass `--paginate` and the CLI follows the token to exhaustion,
+streaming every item as NDJSON (one compact JSON object per line):
 
 ```bash
-stedi call ListEnrollments -p pageSize=100
-# response body has nextPageToken -> next page:
-stedi call ListEnrollments -p pageSize=100 -p pageToken='<nextPageToken>'
+stedi call ListEnrollments --paginate
+stedi call ListPayerRecords --paginate --jq '.stediId'   # just the ids, all pages
 ```
 
-When a user asks for "all" of something, loop until there's no `nextPageToken`
-rather than returning only the first page.
+`--paginate` is GET-only. (You can still page manually with `-p pageToken=…` if
+you need a single specific page.)
+
+## 6. Async transactions — use `--watch`
+
+Much of Stedi is asynchronous: batch eligibility, executions, and transactions
+move through statuses over time. Instead of polling in a loop, add `--watch` to a
+GET that returns a status — the CLI re-issues it until the watched field reaches
+a terminal value, then prints the final result:
+
+```bash
+stedi call GetBatch -p batchId=ba_123 --watch
+stedi call GetExecution -p executionId=ex_1 --watch \
+  --watch-field status --watch-until COMPLETED --watch-until FAILED --watch-interval 5
+```
+
+Defaults: polls `status` every 3s up to 300s, stopping on common terminal values
+(completed/succeeded/failed/…). Use `--watch-field` if the status lives elsewhere
+in the body, and `--watch-until` to set explicit terminal values.
+
+## 7. Raw requests — the escape hatch
+
+For an endpoint not yet in the embedded spec, or quick exploration, use the raw
+commands. Give a full URL, or a path plus `--api` to resolve the base server:
+
+```bash
+stedi get /payers --api payers -p query=aetna
+stedi post /some/new/endpoint --api healthcare --body @payload.json
+```
+
+Prefer `call <operationId>` when the operation exists — it validates path/params
+from the spec. Reach for `get`/`post`/`delete` only when `call` can't express it.
 
 ## Worked example: an eligibility check
 
@@ -163,7 +203,9 @@ stedi call EligibilityCheck --body @request.json
   easy-to-get-wrong payloads — preview catches mistakes before they're real.
 - **Ambiguous ids.** If `call`/`describe` complains an id spans APIs, qualify it
   with `api:OperationId`.
-- **Forgetting pagination.** "All enrollments" means following `nextPageToken`,
-  not just the first page.
+- **Forgetting pagination.** "All enrollments" means `--paginate`, not just the
+  first page.
+- **Hand-rolling polling.** For async/batch status, use `--watch` instead of a
+  manual sleep loop.
 - **Mistaking a `403` for a code bug.** It's auth — check `$STEDI_API_KEY` or
   run `stedi configure`.

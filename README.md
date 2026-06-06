@@ -78,8 +78,15 @@ stedi call EligibilityCheck --body @request.json
 | `stedi describe OP [--api A]` | Full contract for one operation (`$ref`s inlined). |
 | `stedi schema NAME [--api A]` | Dump a component schema with `$ref`s resolved. |
 | `stedi call OP [opts]` | Execute an operation against the live API. |
+| `stedi get\|post\|delete PATH\|URL` | Raw request to an arbitrary path/URL (escape hatch). |
 | `stedi configure [--api-key K]` | Store an API key in the config file. |
-| `stedi --version` / `stedi --help` | Version and help. |
+| `stedi completions SHELL` | Print a shell completion script. |
+| `stedi man [--dir DIR]` | Generate man pages. |
+| `stedi --version` / `stedi --help` | Version (with git SHA + build date) and help. |
+
+Global flags (any command): `-o/--output json\|compact\|table`, `--jq EXPR`
+(built-in jq filtering — no `jq` install needed), `--debug` (dump the HTTP
+exchange to stderr, auth redacted).
 
 ### Referencing operations
 
@@ -101,10 +108,38 @@ stedi call healthcare:GetPayerRecord -p stediId=AETNA --dry-run
   (wins over assembled `-p` values).
 - `--path KEY=VALUE`, `--query KEY=VALUE`, `--header KEY=VALUE` — force a value
   into a specific location.
+- `--body @-` — read the body from stdin.
 - `--api-key KEY` — override the resolved key for one call.
 - `--dry-run` — print the exact request (auth redacted) without sending it.
 - `--verbose` — include the request alongside the response.
 - `--timeout SECONDS` — request timeout (default 60).
+- `--max-retries N` — transient-error retries (default 3).
+
+### Pagination, watching, and filtering
+
+```bash
+# Stream every item across all pages as NDJSON (follows nextPageToken)
+stedi call ListEnrollments --paginate
+
+# Poll an async resource until it reaches a terminal status, then print it
+stedi call GetBatch -p batchId=ba_123 --watch
+stedi call GetExecution -p executionId=ex_1 --watch --watch-field status \
+  --watch-until COMPLETED --watch-until FAILED --watch-interval 5
+
+# Filter with built-in jq (no jq install required); combine with pagination
+stedi call ListPayerRecords --paginate --jq '.stediId'
+stedi ops --search eligibility -o table        # human-readable table view
+```
+
+`--paginate` and `--watch` apply to GET operations. Retries use exponential
+backoff with jitter and honor `Retry-After`; add `--debug` to watch them.
+
+### Reliability
+
+Transient failures (HTTP 429/500/502/503/504) are retried automatically with
+exponential backoff + jitter, honoring the `Retry-After` header. Non-idempotent
+methods (POST/PATCH) only retry on 429/503 to stay safe. Tune with
+`--max-retries` (default 3).
 
 ---
 
@@ -121,14 +156,17 @@ The config file contains a single line, `api_key = "..."`, and is created with
 `0600` permissions. Set `$STEDI_CONFIG` to point at an alternate path.
 
 The key is sent as the `Authorization` header and is **always redacted** in
-`--dry-run` / `--verbose` output.
+`--dry-run`, `--verbose`, and `--debug` output.
 
 ---
 
 ## Output & exit codes
 
-- All output is JSON on stdout; errors are `{"error": "..."}` on stderr.
-- `call` prints `{"status", "ok", "body"}`.
+- Results go to stdout; logs, progress, and errors go to stderr.
+- Default output is pretty JSON; `-o compact` is one-line JSON, `-o table` is a
+  human-readable table (best for `apis`/`ops`). `--jq EXPR` filters first.
+- `--paginate` streams **NDJSON** (one compact JSON object per line).
+- `call` prints `{"status", "ok", "body"}`; errors are `{"error": "..."}`.
 - Exit codes: `0` success, `1` usage/client error, `2` a non-2xx HTTP response.
 
 ---
